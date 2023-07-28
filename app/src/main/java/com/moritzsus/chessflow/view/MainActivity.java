@@ -1,8 +1,10 @@
-package com.moritzsus.chessflow;
+package com.moritzsus.chessflow.view;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+
+import com.moritzsus.chessflow.R;
 
 public class MainActivity extends AppCompatActivity {
 
