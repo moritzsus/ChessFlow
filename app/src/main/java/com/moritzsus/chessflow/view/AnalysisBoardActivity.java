@@ -20,7 +20,7 @@ public class AnalysisBoardActivity extends AppCompatActivity {
         backButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startActivity(new Intent(AnalysisBoardActivity.this, MainActivity.class));
+                onBackPressed();
             }
         });
     }
