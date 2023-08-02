@@ -1,16 +1,27 @@
 package com.moritzsus.chessflow.view;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
+import android.widget.FrameLayout;
+
+import com.moritzsus.chessflow.R;
 
 public class ChessBoardView extends View {
+    int rows = 8;
+    int columns = 8;
+    int notationTextPadding = 2;
+    int cellSize;
     private final int textSize = 35;
     private Paint lightSquarePaint;
     private Paint darkSquarePaint;
+    private Bitmap chessPiece;
 
     public ChessBoardView(Context context) {
         super(context);
@@ -35,12 +46,13 @@ public class ChessBoardView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        cellSize = Math.min(getWidth(), getHeight()) / rows;
 
-        int rows = 8;
-        int columns = 8;
-        int notationTextPadding = 2;
-        int cellSize = Math.min(getWidth(), getHeight()) / rows;
+        drawBoard(canvas);
+        drawChessPieces(canvas);
+    }
 
+    private void drawBoard(Canvas canvas) {
         for(int row = 0; row < rows; row++) {
             for(int col = 0; col < columns; col++) {
 
@@ -77,5 +89,17 @@ public class ChessBoardView extends View {
                 }
             }
         }
+    }
+
+    // TODO Draw pieces at correct position given by a FEN-String from model
+    // only to test piece representation for now
+    private void drawChessPieces(Canvas canvas) {
+        chessPiece = BitmapFactory.decodeResource(getResources(), R.drawable.king_white);
+        Bitmap scaledChessPiece = Bitmap.createScaledBitmap(chessPiece, cellSize, cellSize, false);
+        canvas.drawBitmap(scaledChessPiece, 0, 0, null);
+
+        chessPiece = BitmapFactory.decodeResource(getResources(), R.drawable.king_black);
+        Bitmap scaledChessPiece2 = Bitmap.createScaledBitmap(chessPiece, cellSize, cellSize, false);
+        canvas.drawBitmap(scaledChessPiece2, cellSize, cellSize, null);
     }
 }
