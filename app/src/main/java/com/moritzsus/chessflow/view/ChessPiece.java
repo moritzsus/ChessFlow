@@ -8,7 +8,7 @@ import androidx.appcompat.widget.AppCompatImageView;
 
 import com.moritzsus.chessflow.R;
 
-// TODO: class needed? or as bimtmaps in chessBoardView?
+// TODO: class needed? or as bitmaps in chessBoardView?
 public class ChessPiece extends AppCompatImageView {
     // piece graphics from: https://www.vecteezy.com/vector-art/3444481-chess-icon-vector-chess-icon-vector-illustration
     enum PieceType {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING}

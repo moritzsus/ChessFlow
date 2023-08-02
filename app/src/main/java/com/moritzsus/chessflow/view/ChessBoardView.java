@@ -9,11 +9,17 @@ import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
-import android.widget.FrameLayout;
+
+import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.lifecycle.ViewModelStoreOwner;
 
 import com.moritzsus.chessflow.R;
+import com.moritzsus.chessflow.viewmodel.ChessBoardViewModel;
 
 public class ChessBoardView extends View {
+    private ChessBoardViewModel chessBoardViewModel;
     int rows = 8;
     int columns = 8;
     int notationTextPadding = 2;
@@ -34,6 +40,14 @@ public class ChessBoardView extends View {
     }
 
     private void init() {
+        chessBoardViewModel = new ViewModelProvider((ViewModelStoreOwner) getContext()).get(ChessBoardViewModel.class);
+        chessBoardViewModel.getFenLiveData().observe((LifecycleOwner) getContext(), new Observer<String>() {
+            @Override
+            public void onChanged(String s) {
+                invalidate();
+            }
+        });
+
         lightSquarePaint = new Paint();
         darkSquarePaint = new Paint();
 
