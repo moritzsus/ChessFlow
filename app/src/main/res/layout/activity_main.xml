@@ -27,9 +27,39 @@
             android:layout_height="match_parent"
             android:layout_width="0dp"
             android:layout_weight="3"
+            android:gravity="center"
             android:background="@color/design_default_color_error"
             android:orientation="vertical">
 
+            <Button
+                android:id="@+id/analysisBoardButton"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="10dp"
+                android:layout_width="match_parent"
+                android:layout_height="70dp"
+                android:text="Analysis Board" />
+
+            <Button
+                android:id="@+id/addDrillsButton"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="10dp"
+                android:layout_width="match_parent"
+                android:layout_height="70dp"
+                android:text="Add Drills" />
+
+            <Button
+                android:id="@+id/practiceDrillsButton"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="10dp"
+                android:layout_width="match_parent"
+                android:layout_height="70dp"
+                android:text="Practice Drills" />
         </LinearLayout>
 
         <LinearLayout
