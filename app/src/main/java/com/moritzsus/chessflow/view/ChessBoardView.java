@@ -8,8 +8,10 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 
+import androidx.core.view.MotionEventCompat;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
@@ -56,6 +58,46 @@ public class ChessBoardView extends View {
         lightSquarePaint.setTextSize(textSize);
         darkSquarePaint.setColor(Color.rgb(100, 60, 20));
         darkSquarePaint.setTextSize(textSize);
+
+        setOnTouchListener(new OnTouchListener() {
+            boolean dragAndDrop = false;
+            float startX = 0.f;
+            float startY = 0.f;
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                float moveDeadzone = 10.0f;
+
+                float x = motionEvent.getX();
+                float y = motionEvent.getY();
+                int action = motionEvent.getActionMasked();
+
+                switch (action) {
+                    case MotionEvent.ACTION_DOWN:
+                        startX = x;
+                        startY = y;
+                        //Log.d("d", "DOWN");
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        if(!dragAndDrop) {
+                            // only start drag and drop after deadzone
+                            if(Math.abs(startX - x) > moveDeadzone || Math.abs(startY - y) > moveDeadzone) {
+                                dragAndDrop = true;
+                            }
+                        }
+                        else {
+                            Log.d("d", "MOVE " + x + " " + y);
+                        }
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        if(!dragAndDrop)
+                            chessBoardViewModel.onNormalClick(x, y, cellSize);
+                        //Log.d("d", "UP");
+                        dragAndDrop = false;
+                        break;
+                }
+                return true;
+            }
+        });
     }
 
     @Override
@@ -106,8 +148,6 @@ public class ChessBoardView extends View {
         }
     }
 
-    // TODO Draw pieces at correct position given by a FEN-String from model
-    // only to test piece representation for now
     private void drawChessPieces(Canvas canvas) {
         ChessPiece[][] board = chessBoardViewModel.getChessBoardWithPiecesLiveData().getValue();
 
@@ -164,4 +204,6 @@ public class ChessBoardView extends View {
         Bitmap scaledChessPieceBitmap = Bitmap.createScaledBitmap(chessPieceBitmap, cellSize, cellSize, false);
         canvas.drawBitmap(scaledChessPieceBitmap, col * cellSize, row * cellSize, null);
     }
+
+
 }

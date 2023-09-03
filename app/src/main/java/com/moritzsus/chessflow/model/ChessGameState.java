@@ -115,6 +115,22 @@ public class ChessGameState {
         chessBoardWithPiecesLiveData.setValue(chessBoard);
     }
 
+    //TODO updateFenFromBoard ?
+
+    public boolean movePiece(int fromX, int fromY, int toX, int toY) { //returns if successfully -> legal
+        //TODO rules -> moves legal?
+        ChessPiece cp = chessBoard[fromX][fromY];
+        if(cp.getPieceType() == ChessPiece.PieceType.NONE)
+            return false;
+
+        chessBoard[fromX][fromY] = new ChessPiece(ChessPiece.PieceType.NONE, ChessPiece.PieceColor.NONE);
+        chessBoard[toX][toY] = cp;
+
+        chessBoardWithPiecesLiveData.setValue(chessBoard);
+
+        return true;
+    }
+
     //TODO del later? only for debugging
     public void printMatrix() {
         for(int i = 0; i < 8; i++) {
