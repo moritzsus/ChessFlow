@@ -73,9 +73,9 @@ public class ChessBoardViewModel extends ViewModel {
         int boardX = (int) (y / cellSize);
         int boardY = (int) (x / cellSize);
 
-        // TODO remove selected piece -> gets drawn an finger position
         if(!pieceSelected) {
             selectedPiece = Objects.requireNonNull(chessBoardWithPiecesLiveData.getValue())[boardX][boardY];
+            chessGameState.placePiece(new ChessPiece(ChessPiece.PieceType.NONE, ChessPiece.PieceColor.NONE), boardX, boardY);
 
             if(selectedPiece.getPieceType() != ChessPiece.PieceType.NONE) {
                 pieceSelected = true;
@@ -83,7 +83,6 @@ public class ChessBoardViewModel extends ViewModel {
                 selectedPieceStartY = boardY;
             }
         }
-
         return selectedPiece;
     }
 
@@ -93,6 +92,8 @@ public class ChessBoardViewModel extends ViewModel {
         //transpose to be in chessBoard format from model
         int boardX = (int) (y / cellSize);
         int boardY = (int) (x / cellSize);
+
+        chessGameState.placePiece(selectedPiece, selectedPieceStartX, selectedPieceStartY);
 
         //TODO check for rules, legal moves
         chessGameState.movePiece(selectedPieceStartX, selectedPieceStartY, boardX, boardY);

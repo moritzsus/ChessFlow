@@ -131,6 +131,10 @@ public class ChessGameState {
         return true;
     }
 
+    public void placePiece(ChessPiece piece, int x, int y) {
+        chessBoard[x][y] = piece;
+    }
+
     //TODO del later? only for debugging
     public void printMatrix() {
         for(int i = 0; i < 8; i++) {

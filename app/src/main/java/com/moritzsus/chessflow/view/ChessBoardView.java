@@ -12,7 +12,6 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
-import androidx.core.view.MotionEventCompat;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
@@ -31,8 +30,11 @@ public class ChessBoardView extends View {
     private final int textSize = 35;
     private Paint lightSquarePaint;
     private Paint darkSquarePaint;
-    private Bitmap chessPieceBitmap;
-    Canvas canvas;
+    private Canvas canvas;
+    private boolean dragAndDrop = false;
+    private ChessPiece draggedPiece;
+    private float draggedPieceX = 0.0f;
+    private float draggedPieceY = 0.0f;
 
     public ChessBoardView(Context context) {
         super(context);
@@ -61,8 +63,9 @@ public class ChessBoardView extends View {
         darkSquarePaint.setColor(Color.rgb(100, 60, 20));
         darkSquarePaint.setTextSize(textSize);
 
+        draggedPiece = new ChessPiece(ChessPiece.PieceType.NONE, ChessPiece.PieceColor.NONE);
+
         setOnTouchListener(new OnTouchListener() {
-            boolean dragAndDrop = false;
             float startX = 0.f;
             float startY = 0.f;
             @Override
@@ -77,38 +80,33 @@ public class ChessBoardView extends View {
                     case MotionEvent.ACTION_DOWN:
                         startX = x;
                         startY = y;
-                        //Log.d("d", "DOWN");
                         break;
                     case MotionEvent.ACTION_MOVE:
                         if(!dragAndDrop) {
                             // only start drag and drop after deadzone
                             if(Math.abs(startX - x) > moveDeadzone || Math.abs(startY - y) > moveDeadzone) {
                                 dragAndDrop = true;
+                                draggedPiece = chessBoardViewModel.onDragChessPiece(x, y, cellSize);
                             }
                         }
-                        //TODO check for delay, because first dragAndDrop frame gets skipped (change if, else order?)
                         else {
-                            ChessPiece selectedPiece = chessBoardViewModel.onDragChessPiece(x, y, cellSize);
-                            if(selectedPiece == null) {
-                                Log.d("n", "NULL");
+                            if(draggedPiece.getPieceType() != ChessPiece.PieceType.NONE) {
+                                draggedPieceX = x;
+                                draggedPieceY = y;
+                                invalidate();
                             }
-                            else {
-                                Log.d("", selectedPiece.getPieceColor() + " " + selectedPiece.getPieceType());
-                                //TODO drag animation
-                                //TODO check if drag in grid -> crash if out of grid
-                                //drawChessPiece(selectedPiece,(int) x, (int) y);
-                            }
-
-
-                            Log.d("d", "MOVE " + x + " " + y);
                         }
                         break;
                     case MotionEvent.ACTION_UP:
                         if(!dragAndDrop)
                             chessBoardViewModel.onNormalClick(x, y, cellSize);
-                        else
+                        else {
+                            if(x < 0 || y < 0 || x > canvas.getWidth() || y > canvas.getHeight()) {
+                                x = startX;
+                                y = startY;
+                            }
                             chessBoardViewModel.onDropChessPiece(x, y, cellSize);
-                        //Log.d("d", "UP");
+                        }
                         dragAndDrop = false;
                         break;
                 }
@@ -177,50 +175,57 @@ public class ChessBoardView extends View {
         }
     }
 
-    // x and y is either row and col if drawInGrid is true, or normal coordinates if false
     private void drawChessPiece(ChessPiece chessPiece, int x, int y) {
         if(chessPiece.getPieceType() == ChessPiece.PieceType.NONE) return;
 
-        switch (chessPiece.getPieceType()) {
-            case PAWN:
-                if(chessPiece.getPieceColor() == ChessPiece.PieceColor.WHITE)
-                    chessPieceBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.pawn_white);
-                else
-                    chessPieceBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.pawn_black);
-                break;
-            case KNIGHT:
-                if(chessPiece.getPieceColor() == ChessPiece.PieceColor.WHITE)
-                    chessPieceBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.knight_white);
-                else
-                    chessPieceBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.knight_black);
-                break;
-            case BISHOP:
-                if(chessPiece.getPieceColor() == ChessPiece.PieceColor.WHITE)
-                    chessPieceBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.bishop_white);
-                else
-                    chessPieceBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.bishop_black);
-                break;
-            case ROOK:
-                if(chessPiece.getPieceColor() == ChessPiece.PieceColor.WHITE)
-                    chessPieceBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.rook_white);
-                else
-                    chessPieceBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.rook_black);
-                break;
-            case QUEEN:
-                if(chessPiece.getPieceColor() == ChessPiece.PieceColor.WHITE)
-                    chessPieceBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.queen_white);
-                else
-                    chessPieceBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.queen_black);
-                break;
-            case KING:
-                if(chessPiece.getPieceColor() == ChessPiece.PieceColor.WHITE)
-                    chessPieceBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.king_white);
-                else
-                    chessPieceBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.king_black);
-                break;
-        }
+        Bitmap chessPieceBitmap = getBitmapFromChessPiece(chessPiece);
 
         Bitmap scaledChessPieceBitmap = Bitmap.createScaledBitmap(chessPieceBitmap, cellSize, cellSize, false);
         canvas.drawBitmap(scaledChessPieceBitmap, x * cellSize, y * cellSize, null);
+
+        if(dragAndDrop) {
+            chessPieceBitmap = getBitmapFromChessPiece(draggedPiece);
+            scaledChessPieceBitmap = Bitmap.createScaledBitmap(chessPieceBitmap, cellSize, cellSize, false);
+            canvas.drawBitmap(scaledChessPieceBitmap, draggedPieceX - (0.5f * cellSize), draggedPieceY - (0.5f * cellSize), null);
+        }
+    }
+
+    private Bitmap getBitmapFromChessPiece(ChessPiece chessPiece) {
+        switch (chessPiece.getPieceType()) {
+            case PAWN:
+                if(chessPiece.getPieceColor() == ChessPiece.PieceColor.WHITE)
+                    return BitmapFactory.decodeResource(getResources(), R.drawable.pawn_white);
+                else
+                    return BitmapFactory.decodeResource(getResources(), R.drawable.pawn_black);
+            case KNIGHT:
+                if(chessPiece.getPieceColor() == ChessPiece.PieceColor.WHITE)
+                    return BitmapFactory.decodeResource(getResources(), R.drawable.knight_white);
+                else
+                    return BitmapFactory.decodeResource(getResources(), R.drawable.knight_black);
+            case BISHOP:
+                if(chessPiece.getPieceColor() == ChessPiece.PieceColor.WHITE)
+                    return BitmapFactory.decodeResource(getResources(), R.drawable.bishop_white);
+                else
+                    return BitmapFactory.decodeResource(getResources(), R.drawable.bishop_black);
+            case ROOK:
+                if(chessPiece.getPieceColor() == ChessPiece.PieceColor.WHITE)
+                    return BitmapFactory.decodeResource(getResources(), R.drawable.rook_white);
+                else
+                    return BitmapFactory.decodeResource(getResources(), R.drawable.rook_black);
+            case QUEEN:
+                if(chessPiece.getPieceColor() == ChessPiece.PieceColor.WHITE)
+                    return BitmapFactory.decodeResource(getResources(), R.drawable.queen_white);
+                else
+                    return BitmapFactory.decodeResource(getResources(), R.drawable.queen_black);
+            case KING:
+                if(chessPiece.getPieceColor() == ChessPiece.PieceColor.WHITE)
+                    return BitmapFactory.decodeResource(getResources(), R.drawable.king_white);
+                else
+                    return BitmapFactory.decodeResource(getResources(), R.drawable.king_black);
+            default:
+                Log.d("x", "Unknown ChessPiece -> no corresponding bitmap");
+                //TODO error bitmap instead of black king?
+                return BitmapFactory.decodeResource(getResources(), R.drawable.king_black);
+        }
     }
 }
