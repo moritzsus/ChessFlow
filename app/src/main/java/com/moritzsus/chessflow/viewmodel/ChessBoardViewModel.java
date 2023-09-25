@@ -15,16 +15,19 @@ public class ChessBoardViewModel extends ViewModel {
     private final LiveData<String> fenLiveData;
     private final LiveData<ChessPiece[][]> chessBoardWithPiecesLiveData;
     private boolean pieceSelected = false;
+    private ChessPiece selectedPiece;
     private int selectedPieceStartX;
     private int selectedPieceStartY;
 
     public ChessBoardViewModel () {
+        selectedPiece = new ChessPiece(ChessPiece.PieceType.NONE, ChessPiece.PieceColor.NONE);
         chessGameState = new ChessGameState();
         fenLiveData = chessGameState.getFenStringLiveData();
         chessBoardWithPiecesLiveData = chessGameState.getChessBoardWithPiecesLiveData();
     }
 
     public ChessBoardViewModel(String fen) {
+        selectedPiece = new ChessPiece(ChessPiece.PieceType.NONE, ChessPiece.PieceColor.NONE);
         chessGameState = new ChessGameState(fen);
         fenLiveData = chessGameState.getFenStringLiveData();
         chessBoardWithPiecesLiveData = chessGameState.getChessBoardWithPiecesLiveData();
@@ -63,5 +66,36 @@ public class ChessBoardViewModel extends ViewModel {
             pieceSelected = false;
         }
         Log.d("d", "Position: " + boardX + " " + boardY);
+    }
+
+    public ChessPiece onDragChessPiece(float x, float y, float cellSize) {
+        //transpose to be in chessBoard format from model
+        int boardX = (int) (y / cellSize);
+        int boardY = (int) (x / cellSize);
+
+        // TODO remove selected piece -> gets drawn an finger position
+        if(!pieceSelected) {
+            selectedPiece = Objects.requireNonNull(chessBoardWithPiecesLiveData.getValue())[boardX][boardY];
+
+            if(selectedPiece.getPieceType() != ChessPiece.PieceType.NONE) {
+                pieceSelected = true;
+                selectedPieceStartX = boardX;
+                selectedPieceStartY = boardY;
+            }
+        }
+
+        return selectedPiece;
+    }
+
+    public void onDropChessPiece(float x, float y, float cellSize) {
+        if(!pieceSelected)
+            return;
+        //transpose to be in chessBoard format from model
+        int boardX = (int) (y / cellSize);
+        int boardY = (int) (x / cellSize);
+
+        //TODO check for rules, legal moves
+        chessGameState.movePiece(selectedPieceStartX, selectedPieceStartY, boardX, boardY);
+        pieceSelected = false;
     }
 }

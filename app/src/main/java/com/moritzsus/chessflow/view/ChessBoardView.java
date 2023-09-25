@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.os.Debug;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -31,6 +32,7 @@ public class ChessBoardView extends View {
     private Paint lightSquarePaint;
     private Paint darkSquarePaint;
     private Bitmap chessPieceBitmap;
+    Canvas canvas;
 
     public ChessBoardView(Context context) {
         super(context);
@@ -84,13 +86,28 @@ public class ChessBoardView extends View {
                                 dragAndDrop = true;
                             }
                         }
+                        //TODO check for delay, because first dragAndDrop frame gets skipped (change if, else order?)
                         else {
+                            ChessPiece selectedPiece = chessBoardViewModel.onDragChessPiece(x, y, cellSize);
+                            if(selectedPiece == null) {
+                                Log.d("n", "NULL");
+                            }
+                            else {
+                                Log.d("", selectedPiece.getPieceColor() + " " + selectedPiece.getPieceType());
+                                //TODO drag animation
+                                //TODO check if drag in grid -> crash if out of grid
+                                //drawChessPiece(selectedPiece,(int) x, (int) y);
+                            }
+
+
                             Log.d("d", "MOVE " + x + " " + y);
                         }
                         break;
                     case MotionEvent.ACTION_UP:
                         if(!dragAndDrop)
                             chessBoardViewModel.onNormalClick(x, y, cellSize);
+                        else
+                            chessBoardViewModel.onDropChessPiece(x, y, cellSize);
                         //Log.d("d", "UP");
                         dragAndDrop = false;
                         break;
@@ -103,13 +120,14 @@ public class ChessBoardView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        this.canvas = canvas;
         cellSize = Math.min(getWidth(), getHeight()) / rows;
 
-        drawBoard(canvas);
-        drawChessPieces(canvas);
+        drawBoard();
+        drawChessPieces();
     }
 
-    private void drawBoard(Canvas canvas) {
+    private void drawBoard() {
         for(int row = 0; row < rows; row++) {
             for(int col = 0; col < columns; col++) {
 
@@ -148,18 +166,19 @@ public class ChessBoardView extends View {
         }
     }
 
-    private void drawChessPieces(Canvas canvas) {
+    private void drawChessPieces() {
         ChessPiece[][] board = chessBoardViewModel.getChessBoardWithPiecesLiveData().getValue();
 
         for(int row = 0; row < rows; row++) {
             for(int col = 0; col < columns; col++) {
                 ChessPiece cp = board[row][col];
-                drawChessPiece(canvas, cp, row, col);
+                drawChessPiece(cp, col, row);
             }
         }
     }
 
-    private void drawChessPiece(Canvas canvas, ChessPiece chessPiece, int row, int col) {
+    // x and y is either row and col if drawInGrid is true, or normal coordinates if false
+    private void drawChessPiece(ChessPiece chessPiece, int x, int y) {
         if(chessPiece.getPieceType() == ChessPiece.PieceType.NONE) return;
 
         switch (chessPiece.getPieceType()) {
@@ -202,8 +221,6 @@ public class ChessBoardView extends View {
         }
 
         Bitmap scaledChessPieceBitmap = Bitmap.createScaledBitmap(chessPieceBitmap, cellSize, cellSize, false);
-        canvas.drawBitmap(scaledChessPieceBitmap, col * cellSize, row * cellSize, null);
+        canvas.drawBitmap(scaledChessPieceBitmap, x * cellSize, y * cellSize, null);
     }
-
-
 }
