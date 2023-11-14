@@ -15,6 +15,8 @@ public class ChessBoardViewModel extends ViewModel {
     private final LiveData<String> fenLiveData;
     private final LiveData<ChessPiece[][]> chessBoardWithPiecesLiveData;
     private boolean pieceSelected = false;
+    private boolean dragAndDrop = false;
+    private boolean firstDrag = true;
     private ChessPiece selectedPiece;
     private int selectedPieceStartX;
     private int selectedPieceStartY;
@@ -65,17 +67,30 @@ public class ChessBoardViewModel extends ViewModel {
 
             pieceSelected = false;
         }
+        dragAndDrop = false;
         Log.d("d", "Position: " + boardX + " " + boardY);
     }
 
     public ChessPiece onDragChessPiece(float x, float y, float cellSize) {
+
         //transpose to be in chessBoard format from model
         int boardX = (int) (y / cellSize);
         int boardY = (int) (x / cellSize);
 
+        // reset selected piece if user switches to drag and drop after first clicked on a piece once
+        if(!dragAndDrop && pieceSelected) {
+            pieceSelected = false;
+        }
+
         if(!pieceSelected) {
             selectedPiece = Objects.requireNonNull(chessBoardWithPiecesLiveData.getValue())[boardX][boardY];
-            chessGameState.placePiece(new ChessPiece(ChessPiece.PieceType.NONE, ChessPiece.PieceColor.NONE), boardX, boardY);
+
+            // deletes visual representation of dragged piece from starting square -> only is displayed where it is being dragged
+            if(firstDrag) {
+                chessGameState.placePiece(new ChessPiece(ChessPiece.PieceType.NONE, ChessPiece.PieceColor.NONE), boardX, boardY);
+                dragAndDrop = true;
+                firstDrag = false;
+            }
 
             if(selectedPiece.getPieceType() != ChessPiece.PieceType.NONE) {
                 pieceSelected = true;
@@ -87,6 +102,8 @@ public class ChessBoardViewModel extends ViewModel {
     }
 
     public void onDropChessPiece(float x, float y, float cellSize) {
+        firstDrag = true;
+
         if(!pieceSelected)
             return;
         //transpose to be in chessBoard format from model
@@ -98,5 +115,6 @@ public class ChessBoardViewModel extends ViewModel {
         //TODO check for rules, legal moves
         chessGameState.movePiece(selectedPieceStartX, selectedPieceStartY, boardX, boardY);
         pieceSelected = false;
+        dragAndDrop = false;
     }
 }
