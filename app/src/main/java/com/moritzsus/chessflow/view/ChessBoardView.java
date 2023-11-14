@@ -6,8 +6,10 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.os.Debug;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 
 import androidx.lifecycle.LifecycleOwner;
@@ -28,7 +30,11 @@ public class ChessBoardView extends View {
     private final int textSize = 35;
     private Paint lightSquarePaint;
     private Paint darkSquarePaint;
-    private Bitmap chessPieceBitmap;
+    private Canvas canvas;
+    private boolean dragAndDrop = false;
+    private ChessPiece draggedPiece;
+    private float draggedPieceX = 0.0f;
+    private float draggedPieceY = 0.0f;
 
     public ChessBoardView(Context context) {
         super(context);
@@ -56,18 +62,70 @@ public class ChessBoardView extends View {
         lightSquarePaint.setTextSize(textSize);
         darkSquarePaint.setColor(Color.rgb(100, 60, 20));
         darkSquarePaint.setTextSize(textSize);
+
+        draggedPiece = new ChessPiece(ChessPiece.PieceType.NONE, ChessPiece.PieceColor.NONE);
+
+        setOnTouchListener(new OnTouchListener() {
+            float startX = 0.f;
+            float startY = 0.f;
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                float moveDeadzone = 10.0f;
+
+                float x = motionEvent.getX();
+                float y = motionEvent.getY();
+                int action = motionEvent.getActionMasked();
+
+                switch (action) {
+                    case MotionEvent.ACTION_DOWN:
+                        startX = x;
+                        startY = y;
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        if(!dragAndDrop) {
+                            // only start drag and drop after deadzone
+                            if(Math.abs(startX - x) > moveDeadzone || Math.abs(startY - y) > moveDeadzone) {
+                                dragAndDrop = true;
+                                draggedPiece = chessBoardViewModel.onDragChessPiece(x, y, cellSize);
+                            }
+                        }
+                        else {
+                            if(draggedPiece.getPieceType() != ChessPiece.PieceType.NONE) {
+                                draggedPieceX = x;
+                                draggedPieceY = y;
+                                invalidate();
+                            }
+                        }
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        if(!dragAndDrop)
+                            chessBoardViewModel.onNormalClick(x, y, cellSize);
+                        else {
+                            if(x < 0 || y < 0 || x > canvas.getWidth() || y > canvas.getHeight()) {
+                                x = startX;
+                                y = startY;
+                            }
+                            chessBoardViewModel.onDropChessPiece(x, y, cellSize);
+                        }
+                        dragAndDrop = false;
+                        break;
+                }
+                return true;
+            }
+        });
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        this.canvas = canvas;
         cellSize = Math.min(getWidth(), getHeight()) / rows;
 
-        drawBoard(canvas);
-        drawChessPieces(canvas);
+        drawBoard();
+        drawChessPieces();
     }
 
-    private void drawBoard(Canvas canvas) {
+    private void drawBoard() {
         for(int row = 0; row < rows; row++) {
             for(int col = 0; col < columns; col++) {
 
@@ -106,62 +164,68 @@ public class ChessBoardView extends View {
         }
     }
 
-    // TODO Draw pieces at correct position given by a FEN-String from model
-    // only to test piece representation for now
-    private void drawChessPieces(Canvas canvas) {
+    private void drawChessPieces() {
         ChessPiece[][] board = chessBoardViewModel.getChessBoardWithPiecesLiveData().getValue();
 
         for(int row = 0; row < rows; row++) {
             for(int col = 0; col < columns; col++) {
                 ChessPiece cp = board[row][col];
-                drawChessPiece(canvas, cp, row, col);
+                drawChessPiece(cp, col, row);
             }
         }
     }
 
-    private void drawChessPiece(Canvas canvas, ChessPiece chessPiece, int row, int col) {
+    private void drawChessPiece(ChessPiece chessPiece, int x, int y) {
         if(chessPiece.getPieceType() == ChessPiece.PieceType.NONE) return;
 
+        Bitmap chessPieceBitmap = getBitmapFromChessPiece(chessPiece);
+
+        Bitmap scaledChessPieceBitmap = Bitmap.createScaledBitmap(chessPieceBitmap, cellSize, cellSize, false);
+        canvas.drawBitmap(scaledChessPieceBitmap, x * cellSize, y * cellSize, null);
+
+        if(dragAndDrop) {
+            chessPieceBitmap = getBitmapFromChessPiece(draggedPiece);
+            scaledChessPieceBitmap = Bitmap.createScaledBitmap(chessPieceBitmap, cellSize, cellSize, false);
+            canvas.drawBitmap(scaledChessPieceBitmap, draggedPieceX - (0.5f * cellSize), draggedPieceY - (0.5f * cellSize), null);
+        }
+    }
+
+    private Bitmap getBitmapFromChessPiece(ChessPiece chessPiece) {
         switch (chessPiece.getPieceType()) {
             case PAWN:
                 if(chessPiece.getPieceColor() == ChessPiece.PieceColor.WHITE)
-                    chessPieceBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.pawn_white);
+                    return BitmapFactory.decodeResource(getResources(), R.drawable.pawn_white);
                 else
-                    chessPieceBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.pawn_black);
-                break;
+                    return BitmapFactory.decodeResource(getResources(), R.drawable.pawn_black);
             case KNIGHT:
                 if(chessPiece.getPieceColor() == ChessPiece.PieceColor.WHITE)
-                    chessPieceBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.knight_white);
+                    return BitmapFactory.decodeResource(getResources(), R.drawable.knight_white);
                 else
-                    chessPieceBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.knight_black);
-                break;
+                    return BitmapFactory.decodeResource(getResources(), R.drawable.knight_black);
             case BISHOP:
                 if(chessPiece.getPieceColor() == ChessPiece.PieceColor.WHITE)
-                    chessPieceBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.bishop_white);
+                    return BitmapFactory.decodeResource(getResources(), R.drawable.bishop_white);
                 else
-                    chessPieceBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.bishop_black);
-                break;
+                    return BitmapFactory.decodeResource(getResources(), R.drawable.bishop_black);
             case ROOK:
                 if(chessPiece.getPieceColor() == ChessPiece.PieceColor.WHITE)
-                    chessPieceBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.rook_white);
+                    return BitmapFactory.decodeResource(getResources(), R.drawable.rook_white);
                 else
-                    chessPieceBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.rook_black);
-                break;
+                    return BitmapFactory.decodeResource(getResources(), R.drawable.rook_black);
             case QUEEN:
                 if(chessPiece.getPieceColor() == ChessPiece.PieceColor.WHITE)
-                    chessPieceBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.queen_white);
+                    return BitmapFactory.decodeResource(getResources(), R.drawable.queen_white);
                 else
-                    chessPieceBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.queen_black);
-                break;
+                    return BitmapFactory.decodeResource(getResources(), R.drawable.queen_black);
             case KING:
                 if(chessPiece.getPieceColor() == ChessPiece.PieceColor.WHITE)
-                    chessPieceBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.king_white);
+                    return BitmapFactory.decodeResource(getResources(), R.drawable.king_white);
                 else
-                    chessPieceBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.king_black);
-                break;
+                    return BitmapFactory.decodeResource(getResources(), R.drawable.king_black);
+            default:
+                Log.d("x", "Unknown ChessPiece -> no corresponding bitmap");
+                //TODO error bitmap instead of black king?
+                return BitmapFactory.decodeResource(getResources(), R.drawable.king_black);
         }
-
-        Bitmap scaledChessPieceBitmap = Bitmap.createScaledBitmap(chessPieceBitmap, cellSize, cellSize, false);
-        canvas.drawBitmap(scaledChessPieceBitmap, col * cellSize, row * cellSize, null);
     }
 }
