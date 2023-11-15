@@ -69,6 +69,8 @@ public class ChessBoardViewModel extends ViewModel {
         }
         dragAndDrop = false;
         Log.d("d", "Position: " + boardX + " " + boardY);
+
+        //chessGameState.printMatrix();
     }
 
     public ChessPiece onDragChessPiece(float x, float y, float cellSize) {
