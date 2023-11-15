@@ -402,13 +402,27 @@ public class ChessGameState {
     }
 
     private boolean isQueenMoveLegal(ChessPiece chessPiece, int fromX, int fromY, int toX, int toY) {
+        boolean rookMoves = isRookMoveLegal(new ChessPiece(ChessPiece.PieceType.ROOK, chessPiece.getPieceColor()), fromX, fromY, toX, toY);
+        boolean bishopMoves = isBishopMoveLegal(new ChessPiece(ChessPiece.PieceType.BISHOP, chessPiece.getPieceColor()), fromX, fromY, toX, toY);
 
-        return true;
+        return rookMoves || bishopMoves;
     }
 
     private boolean isKingMoveLegal(ChessPiece chessPiece, int fromX, int fromY, int toX, int toY) {
+        BoardCoordinate targetSquare = new BoardCoordinate(toX, toY);
 
-        return true;
+        List<BoardCoordinate> possibleSquares = new ArrayList<>();
+
+        for(int x = fromX - 1; x < fromX + 2; x++) {
+            for(int y = fromY - 1; y < fromY + 2; y++) {
+                if((x >= 0 && x <= 7) && (y >= 0 && y <= 7)) {
+                    if(chessBoard[x][y].getPieceColor() != chessPiece.getPieceColor())
+                        possibleSquares.add(new BoardCoordinate(x, y));
+                }
+            }
+        }
+
+        return (possibleSquares.contains(targetSquare));
     }
 
     //TODO del later? only for debugging
