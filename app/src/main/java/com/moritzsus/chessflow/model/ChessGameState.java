@@ -118,21 +118,125 @@ public class ChessGameState {
     //TODO updateFenFromBoard ?
 
     public boolean movePiece(int fromX, int fromY, int toX, int toY) { //returns if successfully -> legal
-        //TODO rules -> moves legal?
         ChessPiece cp = chessBoard[fromX][fromY];
         if(cp.getPieceType() == ChessPiece.PieceType.NONE)
             return false;
 
-        chessBoard[fromX][fromY] = new ChessPiece(ChessPiece.PieceType.NONE, ChessPiece.PieceColor.NONE);
-        chessBoard[toX][toY] = cp;
+        boolean isLegal = isMoveLegal(cp, fromX, fromY, toX, toY);
 
-        chessBoardWithPiecesLiveData.setValue(chessBoard);
+        // TODO maybe use placePiece here?
+        if(isLegal) {
+            //Log.d("d", "LEGAL");
+            chessBoard[fromX][fromY] = new ChessPiece(ChessPiece.PieceType.NONE, ChessPiece.PieceColor.NONE);
+            chessBoard[toX][toY] = cp;
+
+            chessBoardWithPiecesLiveData.setValue(chessBoard);
+        }
+
+        return isLegal;
+    }
+
+    // TODO why placePiece?
+    public void placePiece(ChessPiece piece, int x, int y) {
+        chessBoard[x][y] = piece;
+    }
+
+    private boolean isMoveLegal(ChessPiece chessPiece, int fromX, int fromY, int toX, int toY) {
+        switch(chessPiece.getPieceType()) {
+            case PAWN:
+                return isPawnMoveLegal(chessPiece, fromX, fromY, toX, toY);
+            case KNIGHT:
+                return isKnightMoveLegal(chessPiece, fromX, fromY, toX, toY);
+            case BISHOP:
+                return isBishopMoveLegal(chessPiece, fromX, fromY, toX, toY);
+            case ROOK:
+                return isRookMoveLegal(chessPiece, fromX, fromY, toX, toY);
+            case QUEEN:
+                return isQueenMoveLegal(chessPiece, fromX, fromY, toX, toY);
+            case KING:
+                return isKingMoveLegal(chessPiece, fromX, fromY, toX, toY);
+            default:
+                return false;
+        }
+    }
+
+    private boolean isPawnMoveLegal(ChessPiece chessPiece, int fromX, int fromY, int toX, int toY) {
+        boolean isWhite = chessPiece.getPieceColor() == ChessPiece.PieceColor.WHITE;
+
+        if(isWhite) {
+            // pawn moving forward?
+            if(fromX <= toX)
+                return false;
+
+            // pawn moves only 1 square or 2 if on starting position?
+            if((fromX > toX + 2) || (fromX > toX + 1 && (fromX != 6)))
+                return false;
+
+            // is pawn blocked? checks only on same Y file -> capturing below
+            if(chessBoard[fromX - 1][fromY].getPieceType() != ChessPiece.PieceType.NONE && fromY == toY)
+                return false;
+
+            // capturing (no en passant)
+            if(fromY > toY + 1 || fromY < toY - 1)
+                return false;
+
+            // can only capture other color
+            if(fromY != toY) {
+                ChessPiece cpToCapture = chessBoard[toX][toY];
+                return cpToCapture.getPieceColor() == ChessPiece.PieceColor.BLACK;
+            }
+        }
+        else {
+            // pawn moving forward?
+            if(fromX >= toX)
+                return false;
+
+            // pawn moves only 1 square or 2 if on starting position?
+            if((fromX < toX - 2) || (fromX < toX - 1 && (fromX != 1)))
+                return false;
+
+            // is pawn blocked? checks only on same Y file -> capturing below
+            if(chessBoard[fromX + 1][fromY].getPieceType() != ChessPiece.PieceType.NONE && fromY == toY)
+                return false;
+
+            // capturing (no en passant)
+            if(fromY > toY + 1 || fromY < toY - 1)
+                return false;
+
+            // can only capture other color
+            if(fromY != toY) {
+                ChessPiece cpToCapture = chessBoard[toX][toY];
+                return cpToCapture.getPieceColor() == ChessPiece.PieceColor.WHITE;
+            }
+        }
+        // pawn moves forward with no other pieces blocking it
+        return true;
+    }
+
+
+    private boolean isKnightMoveLegal(ChessPiece chessPiece, int fromX, int fromY, int toX, int toY) {
 
         return true;
     }
 
-    public void placePiece(ChessPiece piece, int x, int y) {
-        chessBoard[x][y] = piece;
+    private boolean isBishopMoveLegal(ChessPiece chessPiece, int fromX, int fromY, int toX, int toY) {
+
+        return true;
+    }
+
+    private boolean isRookMoveLegal(ChessPiece chessPiece, int fromX, int fromY, int toX, int toY) {
+
+        return true;
+    }
+
+    private boolean isQueenMoveLegal(ChessPiece chessPiece, int fromX, int fromY, int toX, int toY) {
+
+        return true;
+    }
+
+    private boolean isKingMoveLegal(ChessPiece chessPiece, int fromX, int fromY, int toX, int toY) {
+
+        return true;
     }
 
     //TODO del later? only for debugging
@@ -140,7 +244,7 @@ public class ChessGameState {
         for(int i = 0; i < 8; i++) {
             String m = "";
             for(int j = 0; j < 8; j++) {
-                //m += chessBoard[i][j].getPieceName() + ", ";
+                m += chessBoard[i][j].getPieceType() + " " + chessBoard[i][j].getPieceColor() + ", ";
             }
             Log.d("d", m);
         }
