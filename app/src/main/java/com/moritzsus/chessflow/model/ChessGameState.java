@@ -270,7 +270,7 @@ public class ChessGameState {
         int y = fromY + 1;
         while(x <= 7 && y <= 7) {
             if(chessBoard[x][y].getPieceType() == ChessPiece.PieceType.NONE) {
-                // if so piece on square -> add square to possibleSquares and keep going
+                // if no piece on square -> add square to possibleSquares and keep going
                 possibleSquares.add(new BoardCoordinate(x, y));
                 x++;
                 y++;
@@ -336,8 +336,69 @@ public class ChessGameState {
     }
 
     private boolean isRookMoveLegal(ChessPiece chessPiece, int fromX, int fromY, int toX, int toY) {
+        BoardCoordinate targetSquare = new BoardCoordinate(toX, toY);
 
-        return true;
+        List<BoardCoordinate> possibleSquares = new ArrayList<>();
+
+        // add possible squares in all 4 directions (4 while loops)
+        int x = fromX + 1;
+        while (x <= 7) {
+            if(chessBoard[x][fromY].getPieceType() == ChessPiece.PieceType.NONE) {
+                possibleSquares.add(new BoardCoordinate(x, fromY));
+                x++;
+            }
+            else {
+                // if piece on square -> add square if opposite color, then break out of loop
+                if(chessBoard[x][fromY].getPieceColor() != chessPiece.getPieceColor()) {
+                    possibleSquares.add(new BoardCoordinate(x, fromY));
+                }
+                break;
+            }
+        }
+
+        x = fromX - 1;
+        while (x >= 0) {
+            if(chessBoard[x][fromY].getPieceType() == ChessPiece.PieceType.NONE) {
+                possibleSquares.add(new BoardCoordinate(x, fromY));
+                x--;
+            }
+            else {
+                if(chessBoard[x][fromY].getPieceColor() != chessPiece.getPieceColor()) {
+                    possibleSquares.add(new BoardCoordinate(x, fromY));
+                }
+                break;
+            }
+        }
+
+        int y = fromY + 1;
+        while (y <= 7) {
+            if(chessBoard[fromX][y].getPieceType() == ChessPiece.PieceType.NONE) {
+                possibleSquares.add(new BoardCoordinate(fromX, y));
+                y++;
+            }
+            else {
+                if(chessBoard[fromX][y].getPieceColor() != chessPiece.getPieceColor()) {
+                    possibleSquares.add(new BoardCoordinate(fromX, y));
+                }
+                break;
+            }
+        }
+
+        y = fromY - 1;
+        while (y >= 0) {
+            if(chessBoard[fromX][y].getPieceType() == ChessPiece.PieceType.NONE) {
+                possibleSquares.add(new BoardCoordinate(fromX, y));
+                y--;
+            }
+            else {
+                if(chessBoard[fromX][y].getPieceColor() != chessPiece.getPieceColor()) {
+                    possibleSquares.add(new BoardCoordinate(fromX, y));
+                }
+                break;
+            }
+        }
+
+        return (possibleSquares.contains(targetSquare));
     }
 
     private boolean isQueenMoveLegal(ChessPiece chessPiece, int fromX, int fromY, int toX, int toY) {
