@@ -2,13 +2,31 @@ package com.moritzsus.chessflow.model;
 
 import android.util.Log;
 
+import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ChessGameState {
+    private static class BoardCoordinate {
+        public BoardCoordinate(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
+        public int x;
+        public int y;
+
+        @Override
+        public boolean equals(@Nullable Object obj) {
+            BoardCoordinate bc = (BoardCoordinate) obj;
+            assert bc != null;
+            return (x == bc.x && y == bc.y);
+        }
+    }
     private MutableLiveData<ChessPiece[][]> chessBoardWithPiecesLiveData = new MutableLiveData<>();
     private ChessPiece[][] chessBoard = new ChessPiece[8][8];
     private MutableLiveData<String> fenLiveData = new MutableLiveData<>();
@@ -161,6 +179,7 @@ public class ChessGameState {
     }
 
     private boolean isPawnMoveLegal(ChessPiece chessPiece, int fromX, int fromY, int toX, int toY) {
+        //TODO refactor with BoardCoordinate class
         boolean isWhite = chessPiece.getPieceColor() == ChessPiece.PieceColor.WHITE;
 
         if(isWhite) {
@@ -215,8 +234,30 @@ public class ChessGameState {
 
 
     private boolean isKnightMoveLegal(ChessPiece chessPiece, int fromX, int fromY, int toX, int toY) {
+        BoardCoordinate targetSquare = new BoardCoordinate(toX, toY);
 
-        return true;
+        List<BoardCoordinate> possibleSquares = new ArrayList<>();
+
+        // add all squares on which the knight can got to on an empty board
+        if(fromX - 2 >= 0 && fromY - 1 >= 0)
+            possibleSquares.add(new BoardCoordinate(fromX - 2, fromY - 1));
+        if(fromX - 1 >= 0 && fromY - 2 >= 0)
+            possibleSquares.add(new BoardCoordinate(fromX - 1, fromY - 2));
+        if(fromX + 1 <= 7 && fromY - 2 >= 0)
+            possibleSquares.add(new BoardCoordinate(fromX + 1, fromY - 2));
+        if(fromX + 2 <= 7 && fromY - 1 >= 0)
+            possibleSquares.add(new BoardCoordinate(fromX + 2, fromY - 1));
+        if(fromX + 2 <= 7 && fromY + 1 <= 7)
+            possibleSquares.add(new BoardCoordinate(fromX + 2, fromY + 1));
+        if(fromX + 1 <= 7 && fromY + 2 <= 7)
+            possibleSquares.add(new BoardCoordinate(fromX + 1, fromY + 2));
+        if(fromX - 1 >= 0 && fromY + 2 <= 7)
+            possibleSquares.add(new BoardCoordinate(fromX - 1, fromY + 2));
+        if(fromX - 2 >= 0 && fromY + 1 <= 7)
+            possibleSquares.add(new BoardCoordinate(fromX - 2, fromY + 1));
+
+        // see if targetSquare is in possibleSquares and no piece of the same color is already on that square
+        return (possibleSquares.contains(targetSquare) && chessBoard[targetSquare.x][targetSquare.y].getPieceColor() != chessPiece.getPieceColor());
     }
 
     private boolean isBishopMoveLegal(ChessPiece chessPiece, int fromX, int fromY, int toX, int toY) {
