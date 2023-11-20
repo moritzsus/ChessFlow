@@ -179,57 +179,44 @@ public class ChessGameState {
     }
 
     private boolean isPawnMoveLegal(ChessPiece chessPiece, int fromX, int fromY, int toX, int toY) {
-        //TODO refactor with BoardCoordinate class
+        BoardCoordinate targetSquare = new BoardCoordinate(toX, toY);
+
+        List<BoardCoordinate> possibleSquares = new ArrayList<>();
+
         boolean isWhite = chessPiece.getPieceColor() == ChessPiece.PieceColor.WHITE;
 
         if(isWhite) {
-            // pawn moving forward?
-            if(fromX <= toX)
-                return false;
-
-            // pawn moves only 1 square or 2 if on starting position?
-            if((fromX > toX + 2) || (fromX > toX + 1 && (fromX != 6)))
-                return false;
-
-            // is pawn blocked? checks only on same Y file -> capturing below
-            if(chessBoard[fromX - 1][fromY].getPieceType() != ChessPiece.PieceType.NONE && fromY == toY)
-                return false;
-
-            // capturing (no en passant)
-            if(fromY > toY + 1 || fromY < toY - 1)
-                return false;
-
-            // can only capture other color
-            if(fromY != toY) {
-                ChessPiece cpToCapture = chessBoard[toX][toY];
-                return cpToCapture.getPieceColor() == ChessPiece.PieceColor.BLACK;
+            // one square forward
+            if(fromX - 1 >= 0 && chessBoard[fromX - 1][fromY].getPieceType() == ChessPiece.PieceType.NONE) {
+                possibleSquares.add(new BoardCoordinate(fromX - 1, fromY));
+                // two squares forward
+                if(fromX == 6 && chessBoard[fromX - 2][fromY].getPieceType() == ChessPiece.PieceType.NONE)
+                    possibleSquares.add(new BoardCoordinate(fromX - 2, fromY));
             }
+            // capturing left
+            if(fromX - 1 >= 0 && fromY - 1 >= 0 && chessBoard[fromX - 1][fromY - 1].getPieceColor() == ChessPiece.PieceColor.BLACK)
+                possibleSquares.add(new BoardCoordinate(fromX - 1, fromY - 1));
+            // capturing right
+            if(fromX - 1 >= 0 && fromY + 1 <= 7 && chessBoard[fromX - 1][fromY + 1].getPieceColor() == ChessPiece.PieceColor.BLACK)
+                possibleSquares.add(new BoardCoordinate(fromX - 1, fromY + 1));
         }
         else {
-            // pawn moving forward?
-            if(fromX >= toX)
-                return false;
-
-            // pawn moves only 1 square or 2 if on starting position?
-            if((fromX < toX - 2) || (fromX < toX - 1 && (fromX != 1)))
-                return false;
-
-            // is pawn blocked? checks only on same Y file -> capturing below
-            if(chessBoard[fromX + 1][fromY].getPieceType() != ChessPiece.PieceType.NONE && fromY == toY)
-                return false;
-
-            // capturing (no en passant)
-            if(fromY > toY + 1 || fromY < toY - 1)
-                return false;
-
-            // can only capture other color
-            if(fromY != toY) {
-                ChessPiece cpToCapture = chessBoard[toX][toY];
-                return cpToCapture.getPieceColor() == ChessPiece.PieceColor.WHITE;
+            // one square forward
+            if(fromX + 1 <= 7 && chessBoard[fromX + 1][fromY].getPieceType() == ChessPiece.PieceType.NONE) {
+                possibleSquares.add(new BoardCoordinate(fromX + 1, fromY));
+                // two squares forward
+                if(fromX == 1 && chessBoard[fromX + 2][fromY].getPieceType() == ChessPiece.PieceType.NONE)
+                    possibleSquares.add(new BoardCoordinate(fromX + 2, fromY));
             }
+            // capturing left
+            if(fromX + 1 <= 7 && fromY - 1 >= 0 && chessBoard[fromX + 1][fromY - 1].getPieceColor() == ChessPiece.PieceColor.WHITE)
+                possibleSquares.add(new BoardCoordinate(fromX + 1, fromY - 1));
+            // capturing right
+            if(fromX + 1 <= 7 && fromY + 1 <= 7 && chessBoard[fromX + 1][fromY + 1].getPieceColor() == ChessPiece.PieceColor.WHITE)
+                possibleSquares.add(new BoardCoordinate(fromX + 1, fromY + 1));
         }
-        // pawn moves forward with no other pieces blocking it
-        return true;
+
+        return possibleSquares.contains(targetSquare);
     }
 
 
